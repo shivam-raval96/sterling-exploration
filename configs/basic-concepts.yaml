@@ -1,7 +1,7 @@
 description: basic-concept-decomposition
-model_id: guidelabs/steerling-8b
+model_id: guidelabs/steerling-8b-instruct
 # Replace with a reviewed immutable commit before an approved run.
-model_revision: 496963ca69fbb22dff8818190e225b0cdf06448d
+model_revision: 6e5a87d00d45348001810c30fe9bd65110b69fc2
 run_mode: fresh
 seed: 42
 dtype: bfloat16

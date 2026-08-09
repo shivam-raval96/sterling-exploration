@@ -1,7 +1,7 @@
 # Sterling exploration
 
 Small, reproducible interpretability experiments on
-[`guidelabs/steerling-8b`](https://huggingface.co/guidelabs/steerling-8b).
+[`guidelabs/steerling-8b-instruct`](https://huggingface.co/guidelabs/steerling-8b-instruct).
 
 Steerling-8B is an 8.4B-parameter causal-diffusion model with a native concept
 decomposition. This repository starts with a conservative probe of those native
@@ -24,8 +24,9 @@ need a Hugging Face token, but a token can be stored as a Modal secret named
 
 ## Prepare a run
 
-The checked-in configuration pins the model revision that was inspected while
-this scaffold was created:
+The checked-in configurations pin the model revisions inspected during
+preparation. Prepared experiments live under `experiments/`; the first is the
+AdvBench harmful-compliance and input-concept distribution study.
 
 ```bash
 python -m sterling_exploration.preflight configs/basic-concepts.yaml

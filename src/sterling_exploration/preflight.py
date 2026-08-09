@@ -11,12 +11,17 @@ from .artifacts import config_fingerprint, make_run_id
 
 def load_config(path: Path) -> dict:
     config = yaml.safe_load(path.read_text())
-    required = {"description", "model_id", "model_revision", "run_mode", "prompts"}
+    required = {"description", "run_mode"}
     missing = required - config.keys()
     if missing:
         raise ValueError(f"missing config fields: {sorted(missing)}")
     if config["run_mode"] not in {"fresh", "resume"}:
         raise ValueError("run_mode must be fresh or resume")
+    if "model" in config:
+        if not {"id", "revision"} <= config["model"].keys():
+            raise ValueError("nested model config requires id and revision")
+    elif not {"model_id", "model_revision"} <= config.keys():
+        raise ValueError("config requires model/model revision fields")
     return config
 
 

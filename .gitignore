@@ -21,3 +21,5 @@ build/
 # Runs are ignored until explicitly pulled and reviewed for archival.
 runs/*
 !runs/.gitkeep
+experiments/*/runs/*
+!experiments/*/runs/.gitkeep

@@ -1,13 +1,15 @@
 # Sterling interpretability workspace
 
 This repository is for small, reproducible interpretability studies of
-`guidelabs/steerling-8b`. The model is a custom causal-diffusion transformer,
+`guidelabs/steerling-8b-instruct`. The model is a custom causal-diffusion transformer,
 not an autoregressive Llama-family model. Prefer its native concept outputs over
 generic next-token interpretability assumptions.
 
 ## Project layout
 
 - `configs/` contains resolved experiment inputs.
+- `experiments/` contains one folder per prepared experiment, including its card,
+  resolved config, prompts, and experiment-specific entrypoint.
 - `src/sterling_exploration/` contains reusable analysis and artifact helpers.
 - `modal_app.py` is the remote entrypoint.
 - `runs/` contains pulled, immutable run artifacts; never reuse a run ID.
@@ -17,8 +19,9 @@ generic next-token interpretability assumptions.
 
 - Use Modal for model execution; keep the local machine to submission, testing,
   monitoring, and artifact inspection.
-- Load `guidelabs/steerling-8b` with Hugging Face `trust_remote_code=True` and pin
-  the repository revision in every real run.
+- Load `guidelabs/steerling-8b-instruct` from a Hugging Face snapshot pinned to
+  an immutable revision. Use the official `steerling` generator for masked-
+  diffusion decoding; never substitute autoregressive `transformers.generate`.
 - Use BF16 and a GPU with at least 24 GB VRAM. The default is an L40S (48 GB).
 - Keep Hugging Face cache and run outputs on separate Modal Volumes.
 - Credentials belong in Modal secrets, never in source, configs, or artifacts.
@@ -69,6 +72,9 @@ active. Pull completed or stopped run folders into `runs/`.
   examples, masking/tokenization checks, concept-head checks, intervention
   position/strength sweeps, and deterministic reruns as relevant). Do not launch
   those follow-ups without their own experiment card and explicit **proceed**.
+- For jailbreak/ASR evaluation, retain the dataset prompt, reference target,
+  complete unmodified model response, judge success flag, judge rationale,
+  judge response ID, token usage, retry count, and judge prompt/schema version.
 
 ## Development
 
