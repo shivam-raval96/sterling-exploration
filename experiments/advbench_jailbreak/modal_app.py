@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import html
 import json
 import os
 import signal
@@ -16,6 +15,7 @@ from sterling_exploration.advbench import (
     summarize_distribution,
 )
 from sterling_exploration.artifacts import atomic_json, config_fingerprint, make_run_id
+from sterling_exploration.dashboard import render_dashboard
 from sterling_exploration.preflight import load_config
 from sterling_exploration.visualization import concept_distribution_html, generations_html
 
@@ -89,14 +89,8 @@ def _progress(
     }
     atomic_json(run_dir / "progress.json", progress)
     _append_jsonl(run_dir / "dashboard_history.jsonl", progress)
-    pretty = html.escape(json.dumps(progress, indent=2, sort_keys=True))
-    (run_dir / "dashboard.html").write_text(
-        "<!doctype html><html><head><meta charset='utf-8'>"
-        "<meta http-equiv='refresh' content='10'><title>AdvBench progress</title>"
-        "<style>body{font:16px system-ui;max-width:900px;margin:3rem auto}"
-        "pre{background:#111;color:#eee;padding:1rem}</style></head>"
-        f"<body><h1>{html.escape(run_dir.name)}</h1><pre>{pretty}</pre></body></html>"
-    )
+    history = _read_jsonl(run_dir / "dashboard_history.jsonl")
+    (run_dir / "dashboard.html").write_text(render_dashboard(history))
     print("PROGRESS " + json.dumps(progress, sort_keys=True), flush=True)
     outputs.commit()
 
