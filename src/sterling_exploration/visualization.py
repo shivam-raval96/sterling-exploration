@@ -7,7 +7,7 @@ from typing import Any
 
 def _concept_bar_chart(rows: list[dict[str, Any]], title: str, limit: int = 20) -> str:
     selected = rows[:limit]
-    width, left, right, row_height = 1040, 88, 110, 25
+    width, left, right, row_height = 1180, 330, 110, 27
     height = 54 + row_height * len(selected)
     maximum = max((row["token_firings"] for row in selected), default=1)
     plot_width = width - left - right
@@ -15,8 +15,12 @@ def _concept_bar_chart(rows: list[dict[str, Any]], title: str, limit: int = 20) 
     for index, row in enumerate(selected):
         y = 38 + index * row_height
         bar_width = plot_width * row["token_firings"] / maximum
+        name = str(row.get("concept_name") or "unlabeled")
+        if len(name) > 37:
+            name = name[:36] + "…"
+        label = f"{row['concept_id']} · {name}"
         marks.append(
-            f"<text x='{left - 10}' y='{y + 13}' text-anchor='end'>{row['concept_id']}</text>"
+            f"<text x='{left - 10}' y='{y + 13}' text-anchor='end'>{html.escape(label)}</text>"
             f"<rect x='{left}' y='{y}' width='{bar_width:.1f}' height='17' rx='3'/>"
             f"<text x='{left + bar_width + 7:.1f}' y='{y + 13}'>{row['token_firings']:,}</text>"
         )
@@ -69,11 +73,14 @@ def concept_distribution_html(distribution: dict[str, Any], top_n: int) -> str:
             for row in rows[:top_n]:
                 aligned = row.get("top_tokens", [])
                 token_text = ", ".join(html.escape(item["token"]) for item in aligned)
+                name = html.escape(str(row.get("concept_name") or "Unlabeled concept"))
+                description = html.escape(str(row.get("concept_description") or ""))
                 items.append(
                     "<li>"
-                    f"<code>{row['concept_id']}</code> — "
+                    f"<code>{row['concept_id']}</code> — <strong>{name}</strong> — "
                     f"{row['input_firings']} inputs; {row['token_firings']} tokens; "
                     f"mean={row['mean_activation']:.4f}; max={row['max_activation']:.4f}"
+                    + (f"<p>{description}</p>" if description else "")
                     + (f"; aligned tokens: {token_text}" if token_text else "")
                     + "</li>"
                 )
@@ -123,7 +130,7 @@ details{{background:var(--panel);border:1px solid var(--line);border-radius:10px
 @media(max-width:600px){{main{{padding:18px 10px 40px}}.plot{{padding:10px}}}}
 </style>
 </head><body><main><nav><a href="dashboard.html">Run dashboard</a><a href="generations.html">Generations</a></nav>
-<h1>Concept firing dashboard</h1><p class="sub">Top-k concept IDs from 520 AdvBench inputs; IDs are not semantic labels.</p>
+<h1>Concept firing dashboard</h1><p class="sub">Provider-authored concept names from Guide Labs' catalog; learned token alignments remain the empirical cross-check.</p>
 <div class="stats"><div class="stat">Known concepts observed<strong>{len(user_known):,}</strong></div>
 <div class="stat">Unknown concepts observed<strong>{len(user_unknown):,}</strong></div>
 <div class="stat">Top 1% known firing share<strong>{top_one_share:.1%}</strong></div>

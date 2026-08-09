@@ -61,9 +61,10 @@ active. Pull completed or stopped run folders into `runs/`.
 - Include unmodified controls before testing interventions.
 - Record seeds, tokenizer behavior, masking pattern, diffusion settings, dtype,
   device, dependency versions, and model revision.
-- Do not interpret concept IDs as semantic labels unless an authoritative
-  concept vocabulary is available; the model repository currently exposes IDs
-  and weights but no label file.
+- Resolve concept IDs against Guide Labs' authoritative
+  `guidelabs/steerling/concept_labels.parquet` catalog and record its immutable
+  revision. Treat catalog names/descriptions as model-provider labels and show
+  learned top-token alignments alongside them as an empirical cross-check.
 - Audit surprising negative results end to end before drawing conclusions.
 - Compare final observations to every preregistered hypothesis and expected
   result. When they differ, separate verified implementation defects from
