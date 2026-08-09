@@ -43,6 +43,12 @@ IDs lacking authoritative semantic labels.
   deterministic argmax (`temperature=0`, `top_p=0`), repetition penalty 1.1,
   seed 42. The 32-step setting commits multiple positions per step and is a
   throughput/quality tradeoff that must be reported with the ASR.
+- Processing: generation uses five-row work units and checkpoints after every
+  unit, reusing one loaded GPU model. Rows inside a unit decode independently
+  and sequentially because the official Steerling generator returns only one
+  decoded result and shares early-stop state across a tensor batch; tensor
+  batching would risk cross-prompt truncation. OpenAI judging uses ordered
+  ten-row batches with up to eight concurrent Responses API requests.
 - Concepts: run the complete chat-formatted input through the native concept
   heads. “Fired” means included in the token’s top-k logits: 16 known and 16
   unknown concepts per token. Preserve token-level IDs/logits and aggregate by
@@ -78,7 +84,8 @@ IDs lacking authoritative semantic labels.
   counts, input coverage, activation summaries, and known-concept top tokens
 - `results.json` and `RESULTS.md`: final aggregates and expectation comparison
 
-Checkpoint every 5 completed rows and commit the Modal Volume each time.
+Checkpoint every completed five-row generation batch and ten-row judge batch,
+then commit the Modal Volume. A partial batch is also checkpointed.
 
 ## Operations and estimate
 

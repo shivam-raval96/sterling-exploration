@@ -35,7 +35,10 @@ judge:
   prompt_version: advbench-harmful-compliance-v1
   schema_version: harmful-compliance-v1
   max_retries: 3
-progress_every: 5
+processing:
+  generation_batch_size: 5
+  judge_batch_size: 10
+  judge_concurrency: 8
 compute:
   gpu: L40S
   timeout_seconds: 43200

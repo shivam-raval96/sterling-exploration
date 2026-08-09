@@ -245,6 +245,7 @@ def generation_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
     generated_path = run_dir / "generations.jsonl"
     concepts_path = run_dir / "concepts.jsonl"
     errors = 0
+    generation_batch_size = config["processing"]["generation_batch_size"]
     prior_concepts = _read_jsonl(concepts_path)
     concept_positions = sum(len(record["tokens"]) for record in prior_concepts)
     unique_known = {
@@ -277,6 +278,7 @@ def generation_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
             output = generator.generate_full(prompt_tensor, generation_config)
             generation_record = {
                 "input_index": index,
+                "generation_batch_index": index // generation_batch_size,
                 "prompt": row[dataset_config["prompt_column"]],
                 "target": row[dataset_config["target_column"]],
                 "response": output.text,
@@ -304,6 +306,7 @@ def generation_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
                 generated_path,
                 {
                     "input_index": index,
+                    "generation_batch_index": index // generation_batch_size,
                     "prompt": row[dataset_config["prompt_column"]],
                     "target": row[dataset_config["target_column"]],
                     "response": None,
@@ -312,7 +315,7 @@ def generation_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
             )
 
         next_step = index + 1
-        if next_step % config["progress_every"] == 0 or next_step == len(rows):
+        if next_step % generation_batch_size == 0 or next_step == len(rows):
             _checkpoint(
                 run_dir,
                 {
@@ -331,6 +334,10 @@ def generation_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
                 started=started,
                 errors=errors,
                 method_metrics={
+                    "generation_batch_size": (
+                        next_step % generation_batch_size
+                        or min(generation_batch_size, next_step)
+                    ),
                     "analyzed_input_token_positions": concept_positions,
                     "unique_known_concepts_fired": len(unique_known),
                     "unique_unknown_concepts_fired": len(unique_unknown),
@@ -384,6 +391,8 @@ def generation_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
     secrets=[openai_secret],
 )
 def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
+    from concurrent.futures import ThreadPoolExecutor
+
     from openai import OpenAI
     from tqdm.auto import tqdm
 
@@ -399,8 +408,8 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
     judgments_path = run_dir / "judgments.jsonl"
     client = OpenAI(max_retries=0)
     instructions = load_judge_instructions(JUDGE_PROMPT_REMOTE)
-    errors = 0
     prior_judgments = _read_jsonl(judgments_path)
+    errors = sum(bool(row.get("judgment_error")) for row in prior_judgments)
     successes = sum(bool(row.get("harmful_compliance")) for row in prior_judgments)
     valid = sum(row.get("harmful_compliance") is not None for row in prior_judgments)
     stop_requested = False
@@ -410,8 +419,8 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
         stop_requested = True
 
     signal.signal(signal.SIGTERM, handle_term)
-    for index in tqdm(range(start, len(generations)), initial=start, total=len(generations), desc="Judge"):
-        generation = generations[index]
+
+    def evaluate(generation: dict[str, Any]) -> dict[str, Any]:
         record: dict[str, Any] = {"input_index": generation["input_index"], "retry_count": 0}
         if generation.get("generation_error") or not generation.get("response"):
             record.update(
@@ -445,8 +454,6 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
                             "judgment_error": None,
                         }
                     )
-                    valid += 1
-                    successes += int(judgment.harmful_compliance)
                     last_error = None
                     break
                 except Exception as exc:  # noqa: BLE001 - API/schema failures share retry handling
@@ -454,16 +461,33 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
                     if attempt < config["judge"]["max_retries"]:
                         time.sleep(2**attempt)
             if last_error is not None:
-                errors += 1
                 record.update(
                     {
                         "judgment_error": f"{type(last_error).__name__}: {last_error}",
                         "harmful_compliance": None,
                     }
                 )
-        _append_jsonl(judgments_path, record)
-        next_step = index + 1
-        if next_step % config["progress_every"] == 0 or next_step == len(generations):
+        return record
+
+    judge_batch_size = config["processing"]["judge_batch_size"]
+    judge_concurrency = config["processing"]["judge_concurrency"]
+    with (
+        ThreadPoolExecutor(max_workers=judge_concurrency) as executor,
+        tqdm(total=len(generations), initial=start, desc="Judge") as progress_bar,
+    ):
+        for batch_start in range(start, len(generations), judge_batch_size):
+            batch_end = min(batch_start + judge_batch_size, len(generations))
+            batch = generations[batch_start:batch_end]
+            records = list(executor.map(evaluate, batch))
+            for record in records:
+                _append_jsonl(judgments_path, record)
+                if record.get("harmful_compliance") is not None:
+                    valid += 1
+                    successes += int(record["harmful_compliance"])
+                if record.get("judgment_error"):
+                    errors += 1
+            progress_bar.update(len(batch))
+            next_step = batch_end
             asr = successes / valid if valid else None
             _checkpoint(
                 run_dir,
@@ -487,20 +511,22 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
                     "valid_judgments": valid,
                     "harmful_compliance_successes": successes,
                     "asr": asr,
+                    "judge_batch_size": len(batch),
+                    "judge_concurrency": judge_concurrency,
                 },
             )
-        if stop_requested:
-            _checkpoint(
-                run_dir,
-                {
-                    "status": "stopped",
-                    "phase": "judge",
-                    "next_step": next_step,
-                    "fingerprint": config_fingerprint(config),
-                    "errors": errors,
-                },
-            )
-            raise KeyboardInterrupt("termination requested after safe judge checkpoint")
+            if stop_requested:
+                _checkpoint(
+                    run_dir,
+                    {
+                        "status": "stopped",
+                        "phase": "judge",
+                        "next_step": next_step,
+                        "fingerprint": config_fingerprint(config),
+                        "errors": errors,
+                    },
+                )
+                raise KeyboardInterrupt("termination requested after safe judge checkpoint")
 
     judgments = _read_jsonl(judgments_path)
     paired_rows = [dict(generation, judgment=judgment) for generation, judgment in zip(generations, judgments, strict=True)]

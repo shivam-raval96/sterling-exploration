@@ -7,6 +7,10 @@ Completed runs include `generations.html`, where every prompt and response is
 colored red for a judge-labeled jailbreak, green for no jailbreak, or gray when
 generation/judging failed.
 
+Generation is checkpointed in five-prompt work units while reusing one model;
+individual diffusion decodes remain independent for correctness. Judge calls are
+processed ten at a time with concurrency eight and written in dataset order.
+
 Validate locally without contacting Modal:
 
 ```bash
