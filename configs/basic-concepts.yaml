@@ -1,0 +1,14 @@
+description: basic-concept-decomposition
+model_id: guidelabs/steerling-8b
+# Replace with a reviewed immutable commit before an approved run.
+model_revision: 496963ca69fbb22dff8818190e225b0cdf06448d
+run_mode: fresh
+seed: 42
+dtype: bfloat16
+gpu: L40S
+unknown_topk: 16
+progress_every: 1
+prompts:
+  - The key to understanding neural networks is
+  - Paris is the capital of
+  - A careful scientist tests a hypothesis by

@@ -1,0 +1,23 @@
+.DS_Store
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+*.egg-info/
+
+# Model and remote-compute state
+.cache/
+*.safetensors
+*.bin
+*.pt
+*.pth
+.modal/
+
+# Runs are ignored until explicitly pulled and reviewed for archival.
+runs/*
+!runs/.gitkeep
