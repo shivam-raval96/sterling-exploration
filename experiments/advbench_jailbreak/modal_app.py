@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import json
 import os
+import random
+import shutil
 import signal
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -400,7 +403,7 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
     started = time.monotonic()
     generations = _read_jsonl(run_dir / "generations.jsonl")
     judgments_path = run_dir / "judgments.jsonl"
-    client = OpenAI(max_retries=0)
+    thread_state = threading.local()
     instructions = load_judge_instructions(JUDGE_PROMPT_REMOTE)
     prior_judgments = _read_jsonl(judgments_path)
     errors = sum(bool(row.get("judgment_error")) for row in prior_judgments)
@@ -415,6 +418,8 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
     signal.signal(signal.SIGTERM, handle_term)
 
     def evaluate(generation: dict[str, Any]) -> dict[str, Any]:
+        if not hasattr(thread_state, "client"):
+            thread_state.client = OpenAI(max_retries=0)
         record: dict[str, Any] = {"input_index": generation["input_index"], "retry_count": 0}
         if generation.get("generation_error") or not generation.get("response"):
             record.update(
@@ -429,7 +434,7 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
                 record["retry_count"] = attempt
                 try:
                     judgment, metadata = judge_response(
-                        client,
+                        thread_state.client,
                         model=config["judge"]["model"],
                         reasoning_effort=config["judge"]["reasoning_effort"],
                         instructions=instructions,
@@ -453,7 +458,7 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
                 except Exception as exc:  # noqa: BLE001 - API/schema failures share retry handling
                     last_error = exc
                     if attempt < config["judge"]["max_retries"]:
-                        time.sleep(2**attempt)
+                        time.sleep((2**attempt) + random.uniform(0.0, 1.0))
             if last_error is not None:
                 record.update(
                     {
@@ -617,8 +622,50 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
     return result
 
 
+@app.function(image=image, timeout=600, volumes={"/outputs": outputs})
+def seed_judge_continuation(config: dict[str, Any], run_id: str) -> dict[str, Any]:
+    outputs.reload()
+    source_run_id = config["source_run_id"]
+    source_dir = REMOTE_RUNS / source_run_id
+    run_dir = REMOTE_RUNS / run_id
+    if run_dir.exists():
+        raise FileExistsError(f"continuation run already exists: {run_id}")
+    required = [
+        "generations.jsonl",
+        "judgments.jsonl",
+        "concepts.jsonl",
+        "concept_distribution.json",
+        "concept_distribution.html",
+    ]
+    missing = [name for name in required if not (source_dir / name).exists()]
+    if missing:
+        raise FileNotFoundError(f"source run is missing required artifacts: {missing}")
+    run_dir.mkdir(parents=True)
+    for name in required:
+        shutil.copy2(source_dir / name, run_dir / name)
+    prior_judgments = _read_jsonl(run_dir / "judgments.jsonl")
+    resolved = dict(config, fingerprint=config_fingerprint(config), run_id=run_id)
+    (run_dir / "config.yaml").write_text(yaml.safe_dump(resolved, sort_keys=False))
+    _checkpoint(
+        run_dir,
+        {
+            "status": "running",
+            "phase": "judge",
+            "next_step": len(prior_judgments),
+            "fingerprint": config_fingerprint(config),
+            "errors": sum(bool(row.get("judgment_error")) for row in prior_judgments),
+            "source_run_id": source_run_id,
+        },
+    )
+    return {"source_run_id": source_run_id, "preserved_judgments": len(prior_judgments)}
+
+
 @app.function(image=image, timeout=43_200, volumes={"/outputs": outputs})
 def orchestrate(config: dict[str, Any], run_id: str) -> dict[str, Any]:
+    if config.get("source_run_id"):
+        seeded = seed_judge_continuation.remote(config, run_id)
+        judgment = judge_stage.remote(config, run_id)
+        return {"seeded": seeded, "judgment": judgment}
     generation = generation_stage.remote(config, run_id)
     judgment = judge_stage.remote(config, run_id)
     return {"generation": generation, "judgment": judgment}
