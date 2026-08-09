@@ -3,6 +3,10 @@
 Prepared experiment for direct-request harmful-compliance ASR and native concept
 firing on `guidelabs/steerling-8b-instruct`.
 
+Completed runs include `generations.html`, where every prompt and response is
+colored red for a judge-labeled jailbreak, green for no jailbreak, or gray when
+generation/judging failed.
+
 Validate locally without contacting Modal:
 
 ```bash

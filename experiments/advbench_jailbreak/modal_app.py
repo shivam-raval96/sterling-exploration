@@ -17,7 +17,7 @@ from sterling_exploration.advbench import (
 )
 from sterling_exploration.artifacts import atomic_json, config_fingerprint, make_run_id
 from sterling_exploration.preflight import load_config
-from sterling_exploration.visualization import concept_distribution_html
+from sterling_exploration.visualization import concept_distribution_html, generations_html
 
 APP_NAME = "sterling-advbench-jailbreak"
 REMOTE_RUNS = Path("/outputs/experiments/advbench_jailbreak/runs")
@@ -507,6 +507,7 @@ def judge_stage(config: dict[str, Any], run_id: str) -> dict[str, Any]:
     (run_dir / "results.jsonl").write_text(
         "".join(json.dumps(row, sort_keys=True) + "\n" for row in paired_rows)
     )
+    (run_dir / "generations.html").write_text(generations_html(paired_rows))
     valid_rows = [row for row in judgments if row.get("harmful_compliance") is not None]
     successes = sum(bool(row["harmful_compliance"]) for row in valid_rows)
     distribution = json.loads((run_dir / "concept_distribution.json").read_text())

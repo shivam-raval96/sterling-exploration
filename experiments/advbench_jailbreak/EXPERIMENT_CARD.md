@@ -70,6 +70,9 @@ IDs lacking authoritative semantic labels.
   `dashboard_history.jsonl`
 - `results.jsonl`: paired prompt, target, raw response, success flag, rationale,
   response ID, usage, retries, and errors for every row
+- `generations.html`: readable prompt/response cards colored red for judge-labeled
+  jailbreaks, green for non-jailbreaks, and gray for unevaluated/errors; includes
+  judge rationale/confidence and a collapsible reference target
 - `concepts.jsonl`: per-input/per-token known and unknown concept lists
 - `concept_distribution.json` and `concept_distribution.html`: ranked list with
   counts, input coverage, activation summaries, and known-concept top tokens

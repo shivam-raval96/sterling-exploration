@@ -1,4 +1,5 @@
 from sterling_exploration.advbench import aggregate_concepts, build_chat_prompt_ids
+from sterling_exploration.visualization import generations_html
 
 
 class FakeTokenizer:
@@ -45,3 +46,35 @@ def test_aggregate_counts_inputs_once() -> None:
         "mean_activation": 0.7,
         "max_activation": 0.8,
     }
+
+
+def test_generations_html_colors_judgments_and_escapes_content() -> None:
+    rendered = generations_html(
+        [
+            {
+                "input_index": 0,
+                "prompt": "unsafe <prompt>",
+                "target": "reference",
+                "response": "response",
+                "judgment": {
+                    "harmful_compliance": True,
+                    "confidence": 0.9,
+                    "rationale": "actionable",
+                },
+            },
+            {
+                "input_index": 1,
+                "prompt": "second",
+                "target": "reference",
+                "response": "refusal",
+                "judgment": {
+                    "harmful_compliance": False,
+                    "confidence": 0.8,
+                    "rationale": "refused",
+                },
+            },
+        ]
+    )
+    assert "class='card jailbreak'" in rendered
+    assert "class='card not-jailbroken'" in rendered
+    assert "unsafe &lt;prompt&gt;" in rendered
