@@ -5,6 +5,62 @@ import json
 from typing import Any
 
 
+def _concept_bar_chart(rows: list[dict[str, Any]], title: str, limit: int = 20) -> str:
+    selected = rows[:limit]
+    width, left, right, row_height = 1040, 88, 110, 25
+    height = 54 + row_height * len(selected)
+    maximum = max((row["token_firings"] for row in selected), default=1)
+    plot_width = width - left - right
+    marks = []
+    for index, row in enumerate(selected):
+        y = 38 + index * row_height
+        bar_width = plot_width * row["token_firings"] / maximum
+        marks.append(
+            f"<text x='{left - 10}' y='{y + 13}' text-anchor='end'>{row['concept_id']}</text>"
+            f"<rect x='{left}' y='{y}' width='{bar_width:.1f}' height='17' rx='3'/>"
+            f"<text x='{left + bar_width + 7:.1f}' y='{y + 13}'>{row['token_firings']:,}</text>"
+        )
+    return (
+        f"<section class='plot'><h2>{html.escape(title)}</h2>"
+        f"<svg viewBox='0 0 {width} {height}' role='img' aria-label='{html.escape(title)}'>"
+        f"{''.join(marks)}</svg></section>"
+    )
+
+
+def _rank_curve(groups: list[tuple[str, list[dict[str, Any]]]]) -> str:
+    width, height, left, top, bottom = 1040, 390, 76, 28, 52
+    plot_width, plot_height = width - left - 32, height - top - bottom
+    limit = min(100, max((len(rows) for _, rows in groups), default=0))
+    maximum = max((rows[0]["token_firings"] for _, rows in groups if rows), default=1)
+    paths = []
+    legend = []
+    for series_index, (label, rows) in enumerate(groups, start=1):
+        points = []
+        for index, row in enumerate(rows[:limit]):
+            x = left + (index / max(limit - 1, 1)) * plot_width
+            y = top + (1 - row["token_firings"] / maximum) * plot_height
+            points.append(f"{x:.1f},{y:.1f}")
+        paths.append(f"<polyline class='series s{series_index}' points='{' '.join(points)}'/>")
+        legend.append(
+            f"<span><i class='swatch s{series_index}'></i>{html.escape(label)}</span>"
+        )
+    grid = "".join(
+        f"<line x1='{left}' y1='{top + plot_height * fraction:.1f}' x2='{width - 32}' "
+        f"y2='{top + plot_height * fraction:.1f}'/>"
+        for fraction in (0, 0.25, 0.5, 0.75, 1)
+    )
+    return (
+        "<section class='plot'><h2>Top-100 concept rank decay</h2>"
+        f"<div class='legend'>{''.join(legend)}</div><svg viewBox='0 0 {width} {height}' "
+        "role='img' aria-label='Token firings by concept rank'>"
+        f"<g class='grid'>{grid}</g>{''.join(paths)}"
+        f"<text x='{left}' y='{height - 15}'>rank 1</text>"
+        f"<text x='{width - 32}' y='{height - 15}' text-anchor='end'>rank {limit}</text>"
+        f"<text x='8' y='{top + 5}'>{maximum:,}</text>"
+        f"<text x='8' y='{top + plot_height}'>0</text></svg></section>"
+    )
+
+
 def concept_distribution_html(distribution: dict[str, Any], top_n: int) -> str:
     sections = []
     for scope, groups in distribution.items():
@@ -22,13 +78,57 @@ def concept_distribution_html(distribution: dict[str, Any], top_n: int) -> str:
                     + "</li>"
                 )
             sections.append(
-                f"<h2>{html.escape(scope)} / {html.escape(concept_type)}</h2><ol>{''.join(items)}</ol>"
+                f"<details><summary>{html.escape(scope)} / {html.escape(concept_type)} "
+                f"— {len(rows):,} observed concepts</summary><ol>{''.join(items)}</ol></details>"
             )
-    payload = html.escape(json.dumps(distribution, sort_keys=True))
+    user_known = distribution["user_content"]["known"]
+    user_unknown = distribution["user_content"]["unknown"]
+    full_known = distribution["full_chat_input"]["known"]
+    full_unknown = distribution["full_chat_input"]["unknown"]
+    total_user_firings = sum(row["token_firings"] for row in user_known)
+    top_one_count = max(1, round(len(user_known) * 0.01))
+    top_one_share = sum(row["token_firings"] for row in user_known[:top_one_count]) / max(
+        total_user_firings, 1
+    )
+    charts = "".join(
+        [
+            _concept_bar_chart(user_known, "Most frequent known concepts — user content"),
+            _concept_bar_chart(user_unknown, "Most frequent unknown concepts — user content"),
+            _rank_curve(
+                [
+                    ("User known", user_known),
+                    ("User unknown", user_unknown),
+                    ("Full-chat known", full_known),
+                    ("Full-chat unknown", full_unknown),
+                ]
+            ),
+        ]
+    )
+    payload = json.dumps(distribution, sort_keys=True).replace("</", "<\\/")
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><title>Concept firing distribution</title>
-<style>body{{font:16px system-ui;max-width:1100px;margin:3rem auto;padding:0 1rem}}li{{margin:.45rem 0}}code{{background:#eee;padding:.1rem .25rem}}</style>
-</head><body><h1>Concept firing distribution</h1>{''.join(sections)}
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{{--bg:#f8fafc;--panel:#fff;--text:#172033;--muted:#667085;--line:#d7dce5;--known:#3157d5;--unknown:#d07a24}}
+@media(prefers-color-scheme:dark){{:root{{--bg:#0f1420;--panel:#171e2c;--text:#edf1f7;--muted:#aab4c3;--line:#354052;--known:#7d9cff;--unknown:#f2aa62}}}}
+*{{box-sizing:border-box}}body{{font:15px system-ui;margin:0;background:var(--bg);color:var(--text)}}
+main{{max-width:1280px;margin:0 auto;padding:28px 20px 60px}}nav{{display:flex;gap:16px;margin-bottom:20px}}a{{color:var(--known)}}
+h1{{margin-bottom:6px}}.sub{{color:var(--muted);margin-top:0}}.stats{{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:24px 0}}
+.stat,.plot{{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}}.stat strong{{display:block;font-size:28px;margin-top:5px}}
+.plot{{margin:14px 0}}.plot svg{{display:block;width:100%;height:auto}}svg rect{{fill:var(--known)}}svg text{{fill:var(--text);font-size:12px}}.grid line{{stroke:var(--line);stroke-width:1}}
+.series{{fill:none;stroke-width:3}}.series.s1,.swatch.s1{{stroke:var(--known);background:var(--known)}}.series.s2,.swatch.s2{{stroke:var(--unknown);background:var(--unknown)}}
+.series.s3{{stroke:var(--known);opacity:.45;stroke-dasharray:7 5}}.series.s4{{stroke:var(--unknown);opacity:.45;stroke-dasharray:7 5}}
+.swatch{{display:inline-block;width:18px;height:3px;margin-right:6px;vertical-align:middle}}.legend{{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted)}}
+details{{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin:10px 0;padding:12px 16px}}summary{{cursor:pointer;font-weight:600}}li{{margin:.45rem 0}}code{{background:var(--bg);padding:.1rem .25rem}}
+@media(max-width:600px){{main{{padding:18px 10px 40px}}.plot{{padding:10px}}}}
+</style>
+</head><body><main><nav><a href="dashboard.html">Run dashboard</a><a href="generations.html">Generations</a></nav>
+<h1>Concept firing dashboard</h1><p class="sub">Top-k concept IDs from 520 AdvBench inputs; IDs are not semantic labels.</p>
+<div class="stats"><div class="stat">Known concepts observed<strong>{len(user_known):,}</strong></div>
+<div class="stat">Unknown concepts observed<strong>{len(user_unknown):,}</strong></div>
+<div class="stat">Top 1% known firing share<strong>{top_one_share:.1%}</strong></div>
+<div class="stat">Known user-token firings<strong>{total_user_firings:,}</strong></div></div>
+{charts}<h2>Ranked concept lists</h2>{''.join(sections)}
 <script type="application/json" id="distribution">{payload}</script></body></html>"""
 
 
