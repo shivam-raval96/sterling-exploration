@@ -96,3 +96,9 @@ collection of related investigations, so do not create a new run directory for
 each task or experiment. Create a new run directory only when the user explicitly
 says to start a new run. Each run directory contains `scripts/`, `results/`, and
 a Markdown run summary.
+
+Experiments inside `exploration/runs/` are exempt from the hypothesis and
+follow-up requirements above. Their experiment cards and results do not need to
+include hypotheses or expected results. If one fails or produces an unexpected
+result, record the observed failure and relevant diagnostics, but do not suggest
+next experiments unless the user explicitly asks for them.

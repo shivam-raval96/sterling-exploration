@@ -36,3 +36,14 @@
   tokenizer's `get_vocab()` exposing special tokens rather than its full
   tiktoken ID space; this is a measurement-assumption issue, not evidence of a
   12-token model. See `RESULTS.md` for the compiled analysis.
+- Prepared `EXPERIMENT_CARD_04.md`, the pinned OPUS-100 English–French
+  layerwise-PCA config, and a resumable extraction/plotting script. The
+  experiment has not been approved or launched.
+- Experiment 04 was approved and completed as Modal app
+  `ap-c1VIMzZYjp9V9HQAznSFZY`, call `fc-01KZSHWH6J74YEZAYRBAS98AZB`. It selected
+  200 aligned, language-validated English–French pairs and extracted 32
+  layerwise activation vectors for all 400 conversations. The complete run took
+  170.753 seconds. The two PCA dimensions explain 19.0%–29.3% of variance across
+  layers. The PNG/PDF, coordinates, selected texts, activation chunks, merged
+  activations, and run metadata were pulled into
+  `results/04-english-french-layerwise-pca/`.

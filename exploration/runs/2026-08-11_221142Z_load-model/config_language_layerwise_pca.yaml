@@ -1,0 +1,59 @@
+experiment: 04-english-french-layerwise-pca
+run_id: 2026-08-11_221142Z_load-model
+run_mode: fresh
+model:
+  id: guidelabs/steerling-8b-instruct
+  revision: 6e5a87d00d45348001810c30fe9bd65110b69fc2
+  dtype: bfloat16
+dataset:
+  id: Helsinki-NLP/opus-100
+  revision: 805090dc28bf78897da9641cdf08b61287580df9
+  config: en-fr
+  split: train
+  pairs: 200
+  shuffle_seed: 42
+  shuffle_buffer: 10000
+  min_content_tokens: 4
+  max_content_tokens: 256
+  require_langid_match: true
+representation:
+  conversation_role: user
+  pooling: mean_user_content_tokens
+  layers: all_32_transformer_block_outputs
+  process_batch_size: 1
+  checkpoint_pairs: 25
+pca:
+  components: 2
+  fit_scope: jointly_per_layer_over_400_language_examples
+  svd_solver: randomized
+  random_state: 42
+plot:
+  rows: 4
+  columns: 8
+  english_color: "#008080"
+  french_color: "#FA8072"
+  alpha: 0.7
+  edge_color: black
+  edge_linewidth: 0.3
+  marker_size: 10
+  dpi: 300
+  axis_labels: false
+  title: layer_number_only
+  legend: per_subplot_languages_and_2d_explained_variance
+compute:
+  gpu: L40S
+  timeout_seconds: 1800
+  automatic_retries: 0
+storage:
+  cache_volume: sterling-model-cache
+  output_volume: sterling-exploration-runs
+  remote_directory: /mnt/run-output/exploration/runs/2026-08-11_221142Z_load-model/04-english-french-layerwise-pca
+dependencies:
+  python: "3.13"
+  steerling: "0.2.0"
+  accelerate: "1.14.0"
+  datasets: "4.0.0"
+  langid: "1.1.6"
+  matplotlib: "3.10.5"
+  scikit_learn: "1.7.1"
+  pyyaml: "6.0.2"

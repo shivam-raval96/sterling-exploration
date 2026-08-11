@@ -1,0 +1,60 @@
+compute:
+  automatic_retries: 0
+  gpu: L40S
+  timeout_seconds: 1800
+dataset:
+  config: en-fr
+  id: Helsinki-NLP/opus-100
+  max_content_tokens: 256
+  min_content_tokens: 4
+  pairs: 200
+  require_langid_match: true
+  revision: 805090dc28bf78897da9641cdf08b61287580df9
+  shuffle_buffer: 10000
+  shuffle_seed: 42
+  split: train
+dependencies:
+  accelerate: 1.14.0
+  datasets: 4.0.0
+  langid: 1.1.6
+  matplotlib: 3.10.5
+  python: '3.13'
+  pyyaml: 6.0.2
+  scikit_learn: 1.7.1
+  steerling: 0.2.0
+experiment: 04-english-french-layerwise-pca
+fingerprint: 5fc47c189256d8ef8201b46b53a51eef1195910dd69eeda2699c7fb6d8fe0001
+model:
+  dtype: bfloat16
+  id: guidelabs/steerling-8b-instruct
+  revision: 6e5a87d00d45348001810c30fe9bd65110b69fc2
+pca:
+  components: 2
+  fit_scope: jointly_per_layer_over_400_language_examples
+  random_state: 42
+  svd_solver: randomized
+plot:
+  alpha: 0.7
+  axis_labels: false
+  columns: 8
+  dpi: 300
+  edge_color: black
+  edge_linewidth: 0.3
+  english_color: '#008080'
+  french_color: '#FA8072'
+  legend: per_subplot_languages_and_2d_explained_variance
+  marker_size: 10
+  rows: 4
+  title: layer_number_only
+representation:
+  checkpoint_pairs: 25
+  conversation_role: user
+  layers: all_32_transformer_block_outputs
+  pooling: mean_user_content_tokens
+  process_batch_size: 1
+run_id: 2026-08-11_221142Z_load-model
+run_mode: fresh
+storage:
+  cache_volume: sterling-model-cache
+  output_volume: sterling-exploration-runs
+  remote_directory: /mnt/run-output/exploration/runs/2026-08-11_221142Z_load-model/04-english-french-layerwise-pca
