@@ -176,11 +176,14 @@ def concept_html(concept: dict[str, Any]) -> str:
     ]
     badges = "".join(f"<span class='flag'>{html.escape(flag)}</span>" for flag in flags)
     group = concept.get("group_name")
+    activation = max(0.0, min(1.0, float(concept["activation"])))
     return (
         "<li>"
         f"<div><strong>{html.escape(str(concept['concept_name']))}</strong> "
         f"<code>{html.escape(str(concept['head']))}:{concept['concept_id']}</code></div>"
-        f"<div class='score'>activation {concept['activation']:.3f} · logit {concept['logit']:.3f}</div>"
+        f"<div class='activation-label'>Activation {activation:.3f} ({activation * 100:.1f}%)</div>"
+        f"<div class='activation-bar' role='meter' aria-label='Activation for {html.escape(str(concept['concept_name']), quote=True)}' aria-valuemin='0' aria-valuemax='1' aria-valuenow='{activation:.3f}'><span style='width:{activation * 100:.1f}%'></span></div>"
+        f"<div class='score'>logit {concept['logit']:.3f}</div>"
         + (f"<div class='group'>{html.escape(str(group))}</div>" if group else "")
         + f"<p>{html.escape(str(concept['concept_description']))}</p>{badges}</li>"
     )
@@ -235,7 +238,7 @@ header>div,main{{max-width:1440px;margin:auto}}h1{{margin:0;font-size:24px}}.sub
 .tokens{{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-start}}.token{{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:3px 5px;background:#fff;font:13px ui-monospace,monospace;cursor:pointer;outline:none;transition:background .12s,border-color .12s,box-shadow .12s}}
 .token.english{{box-shadow:inset 0 -2px var(--en)}}.token.french{{box-shadow:inset 0 -2px var(--fr)}}.token:hover,.token:focus{{border-color:#111}}.token.selected{{color:#fff;border-color:#111;box-shadow:none}}.token.english.selected{{background:var(--en)}}.token.french.selected{{background:#c45146}}
 .concept-panel{{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;min-height:340px;max-height:600px;overflow-y:auto;overscroll-behavior:contain;background:#fcfaff;color:#282039;border:1px solid #eadff7;border-radius:10px;font:12px/1.4 system-ui,sans-serif}}
-.panelhead{{position:sticky;top:-16px;z-index:2;grid-column:1/-1;margin:-16px -16px 0;padding:12px 16px;background:#f7f2ff;border-bottom:1px solid #eadff7;font:600 13px ui-monospace,monospace}}.panel-empty{{grid-column:1/-1;align-self:center;text-align:center;color:#746789}}.conceptcol>b{{color:#57466f}}ol{{padding-left:20px;margin:6px 0}}li{{margin:0 0 12px}}li p{{margin:3px 0;color:#514760}}code{{color:#6546a3}}.score,.group{{color:#746789}}.flag{{display:inline-block;background:#eee6fa;color:#503979;border-radius:10px;padding:1px 6px;margin-right:3px}}
+.panelhead{{position:sticky;top:-16px;z-index:2;grid-column:1/-1;margin:-16px -16px 0;padding:12px 16px;background:#f7f2ff;border-bottom:1px solid #eadff7;font:600 13px ui-monospace,monospace}}.panel-empty{{grid-column:1/-1;align-self:center;text-align:center;color:#746789}}.conceptcol>b{{color:#57466f}}ol{{padding-left:20px;margin:6px 0}}li{{margin:0 0 16px}}li p{{margin:5px 0 3px;color:#514760}}code{{color:#6546a3}}.activation-label{{margin-top:5px;color:#5f5271;font-size:11px}}.activation-bar{{width:240px;max-width:100%;height:6px;margin:3px 0 4px;overflow:hidden;background:#e8e1ef;border:1px solid #d8cce5;border-radius:999px}}.activation-bar>span{{display:block;height:100%;background:#8064b3;border-radius:inherit}}.score,.group{{color:#746789}}.flag{{display:inline-block;background:#eee6fa;color:#503979;border-radius:10px;padding:1px 6px;margin-right:3px}}
 @media(max-width:1000px){{.contentgrid{{grid-template-columns:1fr}}.concept-panel{{max-height:440px}}}}@media(max-width:650px){{.concept-panel{{grid-template-columns:1fr}}.panelhead{{grid-column:1}}.counter{{width:100%;margin-left:0}}}}
 </style></head><body><header><div><h1>English–French token concepts</h1>
 <p class="sub">24 aligned pairs · inspect one pair at a time</p>
