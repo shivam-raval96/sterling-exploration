@@ -1,0 +1,123 @@
+{
+  "experiment": "03-model-inspection-with-accelerate",
+  "fingerprint": "9dc541bb0c25f0469fbc470a227886758691a57325504fb1df507b8c05bca94c",
+  "model_class": "transformers_modules.guidelabs.steerling_hyphen_8b_hyphen_instruct.6e5a87d00d45348001810c30fe9bd65110b69fc2.modeling_steerling.SteerlingForCausalLM",
+  "run_id": "2026-08-11_221142Z_load-model",
+  "status": "complete",
+  "totals": {
+    "buffers": 0,
+    "module_count": 400,
+    "module_type_counts": {
+      "BlockCausalAttention": 32,
+      "CausalDiffusionBlock": 32,
+      "CausalDiffusionLM": 1,
+      "ConceptHead": 2,
+      "ConceptPooling": 2,
+      "Embedding": 3,
+      "Linear": 133,
+      "MLP": 32,
+      "ModuleList": 1,
+      "RMSNorm": 129,
+      "RotaryEmbedding": 32,
+      "SteerlingForCausalLM": 1
+    },
+    "parameter_device_counts": {
+      "cuda:0": 264
+    },
+    "parameter_dtype_counts": {
+      "torch.bfloat16": 264
+    },
+    "parameter_storage_bytes": 16784138240,
+    "parameters": 8392069120,
+    "trainable_parameters": 8392069120
+  },
+  "validation": {
+    "all_passed": false,
+    "checks": {
+      "all_parameters_bfloat16": true,
+      "all_parameters_cuda": true,
+      "attention_heads_match": true,
+      "config_vocab_matches": true,
+      "custom_model_class": true,
+      "hidden_size_matches": true,
+      "known_concepts_match": true,
+      "kv_heads_match": true,
+      "layers_match": true,
+      "nonempty_modules": true,
+      "parameter_count_within_5_percent": true,
+      "tokenizer_vocab_near_expected": false,
+      "unknown_concepts_match": true
+    },
+    "passed": 12,
+    "total": 13
+  },
+  "vocabulary": {
+    "added_vocab_size": 8,
+    "config_vocab_size": 100352,
+    "get_vocab_size": 12,
+    "special_token_ids": [
+      100278,
+      100257,
+      100277,
+      100279,
+      100280,
+      100281,
+      100282,
+      100283
+    ],
+    "special_token_strings": [
+      "<|bos|>",
+      "<|endoftext|>",
+      "<|pad|>",
+      "<|endofchunk|>",
+      "<|mask|>",
+      "<|start_header_id|>",
+      "<|end_header_id|>",
+      "<|eot_id|>"
+    ],
+    "special_tokens": {
+      "additional_special_tokens": {
+        "token_ids": [
+          100279,
+          100280,
+          100281,
+          100282,
+          100283
+        ],
+        "tokens": [
+          "<|endofchunk|>",
+          "<|mask|>",
+          "<|start_header_id|>",
+          "<|end_header_id|>",
+          "<|eot_id|>"
+        ]
+      },
+      "bos_token": {
+        "token_ids": [
+          100278
+        ],
+        "tokens": [
+          "<|bos|>"
+        ]
+      },
+      "eos_token": {
+        "token_ids": [
+          100257
+        ],
+        "tokens": [
+          "<|endoftext|>"
+        ]
+      },
+      "pad_token": {
+        "token_ids": [
+          100277
+        ],
+        "tokens": [
+          "<|pad|>"
+        ]
+      }
+    },
+    "tokenizer_class": "transformers_modules.guidelabs.steerling_hyphen_8b_hyphen_instruct.6e5a87d00d45348001810c30fe9bd65110b69fc2.tokenization_steerling.SteerlingTokenizer",
+    "tokenizer_length": 12
+  }
+}

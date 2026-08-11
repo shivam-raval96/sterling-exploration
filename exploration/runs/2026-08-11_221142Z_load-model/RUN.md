@@ -18,4 +18,21 @@
   direct parameter/buffer shapes and types, records vocabulary/tokenizer/config
   metadata, and writes `results/model_inspection.json` atomically.
 - Prepared `EXPERIMENT_CARD.md` for execution in a Modal Notebook on one L40S.
-- No model compute has been launched and no results have been produced yet.
+- Prepared `EXPERIMENT_CARD_02.md`, which supersedes the notebook execution
+  plan with a detached, checkpointed, remote-first Modal experiment. It has not
+  been approved or launched.
+- Experiment 02 was subsequently approved and launched as Modal app
+  `ap-gXmQC1HNfIW3Do0RHv4sil`, call `fc-01KZSFX47PYDRYYKVDGAJJP8MV`. It committed
+  initialization artifacts, then stopped before model loading because the image
+  omitted the required `accelerate` package. The remote artifacts were pulled to
+  `results/02-durable-model-structure-inspection-stopped/`.
+- Prepared `EXPERIMENT_CARD_03.md` as a narrow fresh-run correction that pins
+  `accelerate==1.14.0` and uses a new immutable remote artifact directory. It has
+  not been approved or launched.
+- Experiment 03 was approved and completed as Modal app
+  `ap-NRj1LkKdKwpGcBu8lRhMm0`, call `fc-01KZSG5VTFE15NVDRPTZVQJAQF`. The run
+  completed in 16.437 seconds, persisted all required artifacts, and passed 12
+  of 13 automated hypothesis checks. The only failed check came from the custom
+  tokenizer's `get_vocab()` exposing special tokens rather than its full
+  tiktoken ID space; this is a measurement-assumption issue, not evidence of a
+  12-token model. See `RESULTS.md` for the compiled analysis.

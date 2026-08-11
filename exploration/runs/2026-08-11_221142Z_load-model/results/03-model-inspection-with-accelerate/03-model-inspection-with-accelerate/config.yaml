@@ -1,0 +1,35 @@
+compute:
+  automatic_retries: 0
+  gpu: L40S
+  maximum_manual_resumes: 1
+  timeout_seconds: 1800
+dependencies:
+  accelerate: 1.14.0
+  python: '3.13'
+  pyyaml: 6.0.2
+  steerling: 0.2.0
+expected:
+  attention_heads: 32
+  hidden_size: 4096
+  known_concepts: 33732
+  kv_heads: 4
+  layers: 32
+  parameter_count: 8800000000
+  parameter_tolerance_fraction: 0.05
+  unknown_concepts: 101196
+  vocab_size: 100352
+experiment: 03-model-inspection-with-accelerate
+fingerprint: 9dc541bb0c25f0469fbc470a227886758691a57325504fb1df507b8c05bca94c
+model:
+  device_map: cuda
+  dtype: bfloat16
+  id: guidelabs/steerling-8b-instruct
+  revision: 6e5a87d00d45348001810c30fe9bd65110b69fc2
+run_id: 2026-08-11_221142Z_load-model
+run_mode: fresh
+storage:
+  cache_mount: /mnt/model-cache
+  cache_volume: sterling-model-cache
+  output_mount: /mnt/run-output
+  output_volume: sterling-exploration-runs
+  remote_directory: /mnt/run-output/exploration/runs/2026-08-11_221142Z_load-model/03-model-inspection-with-accelerate

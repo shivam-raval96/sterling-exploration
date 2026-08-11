@@ -1,0 +1,11 @@
+{
+  "detail": "12/13 checks passed",
+  "elapsed_seconds": 16.437,
+  "experiment": "03-model-inspection-with-accelerate",
+  "fingerprint": "9dc541bb0c25f0469fbc470a227886758691a57325504fb1df507b8c05bca94c",
+  "next_phase": "none",
+  "phase": "complete",
+  "run_id": "2026-08-11_221142Z_load-model",
+  "status": "complete",
+  "timestamp": "2026-08-11T22:48:28Z"
+}

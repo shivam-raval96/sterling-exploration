@@ -1,0 +1,36 @@
+SteerlingForCausalLM(
+  (transformer): CausalDiffusionLM(
+    (tok_emb): Embedding(100352, 4096)
+    (blocks): ModuleList(
+      (0-31): 32 x CausalDiffusionBlock(
+        (ln_1): RMSNorm()
+        (ln_2): RMSNorm()
+        (attn): BlockCausalAttention(
+          (c_attn): Linear(in_features=4096, out_features=5120, bias=False)
+          (c_proj): Linear(in_features=4096, out_features=4096, bias=False)
+          (q_norm): RMSNorm()
+          (k_norm): RMSNorm()
+          (rope): RotaryEmbedding()
+        )
+        (mlp): MLP(
+          (c_fc): Linear(in_features=4096, out_features=32768, bias=False)
+          (c_proj): Linear(in_features=16384, out_features=4096, bias=False)
+        )
+      )
+    )
+    (ln_f): RMSNorm()
+    (lm_head): Linear(in_features=4096, out_features=100352, bias=False)
+  )
+  (known_head): ConceptHead(
+    (concept_embedding): Embedding(33744, 4096)
+    (concept_predictor): Linear(in_features=4096, out_features=33744, bias=False)
+    (concept_pooling): ConceptPooling()
+  )
+  (unknown_head): ConceptHead(
+    (embedding_coef): Embedding(101200, 256)
+    (embedding_basis): Linear(in_features=256, out_features=4096, bias=False)
+    (predictor_down): Linear(in_features=4096, out_features=256, bias=False)
+    (predictor_up): Linear(in_features=256, out_features=101200, bias=False)
+    (concept_pooling): ConceptPooling()
+  )
+)
