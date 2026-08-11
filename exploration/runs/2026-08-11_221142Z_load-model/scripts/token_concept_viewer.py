@@ -216,11 +216,11 @@ def viewer_html(records: list[dict[str, Any]]) -> str:
         search = (record["english"]["text"] + " " + record["french"]["text"]).lower()
         cards.append(
             f"<article class='pair' id='pair-{record['pair_id']}' data-search='{html.escape(search, quote=True)}'>"
-            f"<h2>Pair {record['pair_id'] + 1}</h2><div class='pairgrid'>"
+            f"<h2>Pair {record['pair_id'] + 1}</h2><div class='contentgrid'><div class='pairgrid'>"
             f"{languages['English']}{languages['French']}</div>"
             "<section class='concept-panel' aria-live='polite'>"
             "<p class='panel-empty'>Hover over or focus a token to inspect its concepts.</p>"
-            "</section></article>"
+            "</section></div></article>"
         )
     return f"""<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -231,13 +231,13 @@ header{{position:sticky;top:0;z-index:100;background:#fffffff2;backdrop-filter:b
 header>div,main{{max-width:1440px;margin:auto}}h1{{margin:0;font-size:24px}}.sub{{margin:4px 0 10px;color:var(--muted)}}
 .nav{{display:flex;align-items:center;gap:8px;flex-wrap:wrap}}button,select{{padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text);font:inherit}}button{{cursor:pointer}}button:disabled{{opacity:.4;cursor:default}}select{{min-width:130px}}.counter{{color:var(--muted);margin-left:auto}}main{{padding:20px}}
 .pair{{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:0;overflow:hidden}}.pair[hidden]{{display:none}}.pair h2{{font-size:14px;color:var(--muted);margin:0 0 10px}}
-.pairgrid{{display:grid;grid-template-columns:1fr 1fr;gap:16px}}.language{{border-top:4px solid;padding-top:8px;min-width:0}}.language.english{{border-color:var(--en)}}.language.french{{border-color:var(--fr)}}
+.contentgrid{{display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,.9fr);gap:18px;align-items:start}}.pairgrid{{display:grid;grid-template-columns:1fr;gap:22px}}.language{{border-top:4px solid;padding-top:8px;min-width:0}}.language.english{{border-color:var(--en)}}.language.french{{border-color:var(--fr)}}
 .language h3{{margin:0}}.english h3{{color:var(--en)}}.french h3{{color:#c45146}}.raw{{color:var(--muted);margin:.35rem 0 .8rem}}
 .tokens{{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-start}}.token{{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:3px 5px;background:#fff;font:13px ui-monospace,monospace;cursor:pointer;outline:none;transition:background .12s,border-color .12s,box-shadow .12s}}
 .token.english{{box-shadow:inset 0 -2px var(--en)}}.token.french{{box-shadow:inset 0 -2px var(--fr)}}.token:hover,.token:focus{{border-color:#111}}.token.selected{{color:#fff;border-color:#111;box-shadow:none}}.token.english.selected{{background:var(--en)}}.token.french.selected{{background:#c45146}}
-.concept-panel{{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;padding:16px;min-height:220px;max-height:440px;overflow-y:auto;overscroll-behavior:contain;background:#111827;color:#f8fafc;border:1px solid #475467;border-radius:10px;font:12px/1.4 system-ui,sans-serif}}
-.panelhead{{position:sticky;top:-16px;z-index:2;grid-column:1/-1;margin:-16px -16px 0;padding:12px 16px;background:#111827;border-bottom:1px solid #475467;font:600 13px ui-monospace,monospace}}.panel-empty{{grid-column:1/-1;align-self:center;text-align:center;color:#aab4c3}}.conceptcol>b{{color:#cbd5e1}}ol{{padding-left:20px;margin:6px 0}}li{{margin:0 0 12px}}li p{{margin:3px 0;color:#d0d5dd}}code{{color:#93c5fd}}.score,.group{{color:#aab4c3}}.flag{{display:inline-block;background:#344054;border-radius:10px;padding:1px 6px;margin-right:3px}}
-@media(max-width:850px){{.pairgrid,.concept-panel{{grid-template-columns:1fr}}.panelhead{{grid-column:1}}.counter{{width:100%;margin-left:0}}}}
+.concept-panel{{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;min-height:340px;max-height:600px;overflow-y:auto;overscroll-behavior:contain;background:#f7f2ff;color:#282039;border:1px solid #d6c7ed;border-radius:10px;font:12px/1.4 system-ui,sans-serif}}
+.panelhead{{position:sticky;top:-16px;z-index:2;grid-column:1/-1;margin:-16px -16px 0;padding:12px 16px;background:#eee5ff;border-bottom:1px solid #d6c7ed;font:600 13px ui-monospace,monospace}}.panel-empty{{grid-column:1/-1;align-self:center;text-align:center;color:#746789}}.conceptcol>b{{color:#57466f}}ol{{padding-left:20px;margin:6px 0}}li{{margin:0 0 12px}}li p{{margin:3px 0;color:#514760}}code{{color:#6546a3}}.score,.group{{color:#746789}}.flag{{display:inline-block;background:#e2d6f5;color:#503979;border-radius:10px;padding:1px 6px;margin-right:3px}}
+@media(max-width:1000px){{.contentgrid{{grid-template-columns:1fr}}.concept-panel{{max-height:440px}}}}@media(max-width:650px){{.concept-panel{{grid-template-columns:1fr}}.panelhead{{grid-column:1}}.counter{{width:100%;margin-left:0}}}}
 </style></head><body><header><div><h1>English–French token concepts</h1>
 <p class="sub">24 aligned pairs · inspect one pair at a time</p>
 <div class="nav"><button id="prev" type="button">← Previous</button><select id="pair-select" aria-label="Choose pair">{''.join(f'<option value="{i}">Pair {i + 1}</option>' for i in range(len(records)))}</select><button id="next" type="button">Next →</button><span class="counter" id="counter"></span></div></div></header>
