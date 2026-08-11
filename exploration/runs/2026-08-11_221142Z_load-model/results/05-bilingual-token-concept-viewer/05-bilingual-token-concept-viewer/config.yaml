@@ -1,0 +1,55 @@
+catalog:
+  rows: 134928
+  sha256: 09c3cec4ca9301f76afc848f8ad83645c4ad365937dd6c4d66fa0f5e8e749139
+  source: guidelabs/steerling/concept_labels.parquet
+compute:
+  automatic_retries: 0
+  gpu: L40S
+  timeout_seconds: 1800
+concepts:
+  known_top_k: 5
+  positions: user_content_tokens_only
+  unknown_top_k: 5
+dependencies:
+  accelerate: 1.14.0
+  pandas: 2.2.3
+  pyarrow: 25.0.1
+  python: '3.13'
+  pyyaml: 6.0.2
+  steerling: 0.2.0
+experiment: 05-bilingual-token-concept-viewer
+fingerprint: c935a6d19af8f8b9e62f246ca450303ad6dd4b25e1620bfcbd038c974ee8a0f5
+model:
+  dtype: bfloat16
+  id: guidelabs/steerling-8b-instruct
+  revision: 6e5a87d00d45348001810c30fe9bd65110b69fc2
+processing:
+  batch_size: 1
+  checkpoint_pairs: 4
+run_id: 2026-08-11_221142Z_load-model
+run_mode: resume
+source:
+  experiment: 04-english-french-layerwise-pca
+  pair_count: 24
+  selected_pairs: first_24
+  selected_pairs_file: selected_pairs.jsonl
+storage:
+  cache_volume: sterling-model-cache
+  output_volume: sterling-exploration-runs
+  remote_directory: /mnt/run-output/exploration/runs/2026-08-11_221142Z_load-model/05-bilingual-token-concept-viewer
+viewer:
+  paired_columns: true
+  show_fields:
+  - head
+  - concept_id
+  - concept_name
+  - concept_description
+  - group_name
+  - activation
+  - logit
+  - is_steerable
+  - is_tone
+  - is_alignment
+  - is_demographic
+  title: "English\u2013French token concepts"
+  tooltip_trigger: hover_and_keyboard_focus

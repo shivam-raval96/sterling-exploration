@@ -1,0 +1,10 @@
+{
+  "catalog_sha256": "09c3cec4ca9301f76afc848f8ad83645c4ad365937dd6c4d66fa0f5e8e749139",
+  "conversations": 48,
+  "fingerprint": "c935a6d19af8f8b9e62f246ca450303ad6dd4b25e1620bfcbd038c974ee8a0f5",
+  "known_top_k": 5,
+  "pairs": 24,
+  "status": "complete",
+  "unknown_top_k": 5,
+  "user_tokens": 1318
+}

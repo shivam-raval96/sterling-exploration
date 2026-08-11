@@ -47,3 +47,17 @@
   layers. The PNG/PDF, coordinates, selected texts, activation chunks, merged
   activations, and run metadata were pulled into
   `results/04-english-french-layerwise-pca/`.
+- Re-rendered experiment 04's PNG with thin grey lines connecting each aligned
+  English–French pair; no replacement PDF was generated.
+- Prepared `EXPERIMENT_CARD_05.md`, its pinned config, and the bilingual token
+  concept viewer script.
+- Experiment 05 was approved and completed as Modal app
+  `ap-QAKCe0dQj3xYaEKGXvnanr`, call
+  `fc-01KZSK006S4QWHSPEW692QY50V`. An initial catalog-normalization attempt
+  stopped at 0/24 pairs on nullable boolean metadata; the corrected resumable
+  run completed all 24 aligned pairs in 23.094 seconds. The self-contained HTML
+  contains 48 conversations and 1,318 user-content tokens, each with the top
+  five known and unknown concepts. Search and keyboard-focus tooltips were
+  verified in a browser, including provider names, descriptions, groups,
+  activation/logit values, and flags when present. Artifacts are in
+  `results/05-bilingual-token-concept-viewer/`.

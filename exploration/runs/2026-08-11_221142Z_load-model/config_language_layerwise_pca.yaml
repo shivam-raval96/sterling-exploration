@@ -35,6 +35,9 @@ plot:
   alpha: 0.7
   edge_color: black
   edge_linewidth: 0.3
+  pair_line_color: "#B0B0B0"
+  pair_line_alpha: 0.45
+  pair_line_width: 0.35
   marker_size: 10
   dpi: 300
   axis_labels: false

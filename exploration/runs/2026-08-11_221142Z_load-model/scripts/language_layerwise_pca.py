@@ -82,9 +82,9 @@ def chat_prompt_ids(tokenizer: Any, text: str) -> tuple[list[int], list[int]]:
 def render_plot(
     coordinates: Any,
     labels: list[str],
+    pair_ids: list[int],
     explained: list[float],
     output_png: Path,
-    output_pdf: Path,
     plot_config: dict[str, Any],
 ) -> None:
     import matplotlib.pyplot as plt
@@ -94,8 +94,23 @@ def render_plot(
     figure, axes = plt.subplots(rows, columns, figsize=(24, 12), constrained_layout=True)
     english = [index for index, label in enumerate(labels) if label == "English"]
     french = [index for index, label in enumerate(labels) if label == "French"]
+    paired_indices: dict[int, dict[str, int]] = {}
+    for index, (pair_id, language) in enumerate(zip(pair_ids, labels, strict=True)):
+        paired_indices.setdefault(int(pair_id), {})[language] = index
     for layer, axis in enumerate(axes.flat):
         layer_xy = coordinates[layer]
+        for pair in paired_indices.values():
+            if "English" not in pair or "French" not in pair:
+                continue
+            english_index, french_index = pair["English"], pair["French"]
+            axis.plot(
+                [layer_xy[english_index, 0], layer_xy[french_index, 0]],
+                [layer_xy[english_index, 1], layer_xy[french_index, 1]],
+                color=plot_config["pair_line_color"],
+                alpha=plot_config["pair_line_alpha"],
+                linewidth=plot_config["pair_line_width"],
+                zorder=1,
+            )
         axis.scatter(
             layer_xy[english, 0],
             layer_xy[english, 1],
@@ -104,6 +119,7 @@ def render_plot(
             alpha=plot_config["alpha"],
             edgecolors=plot_config["edge_color"],
             linewidths=plot_config["edge_linewidth"],
+            zorder=2,
         )
         axis.scatter(
             layer_xy[french, 0],
@@ -113,6 +129,7 @@ def render_plot(
             alpha=plot_config["alpha"],
             edgecolors=plot_config["edge_color"],
             linewidths=plot_config["edge_linewidth"],
+            zorder=2,
         )
         axis.set_title(f"Layer {layer + 1}")
         axis.set_xlabel("")
@@ -127,8 +144,36 @@ def render_plot(
         axis.legend(handles=handles, loc="best", fontsize=5, frameon=True, handletextpad=0.3)
     output_png.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output_png, dpi=plot_config["dpi"], bbox_inches="tight")
-    figure.savefig(output_pdf, bbox_inches="tight")
     plt.close(figure)
+
+
+def rerender_existing(results_dir: Path) -> None:
+    import numpy as np
+
+    explained_payload = json.loads((results_dir / "explained_variance.json").read_text())
+    explained = [row["two_dimensional"] for row in explained_payload["layers"]]
+    rows = list(csv.DictReader((results_dir / "pca_coordinates.csv").open()))
+    layer_count = max(int(row["layer"]) for row in rows)
+    examples_per_layer = len(rows) // layer_count
+    coordinates = np.empty((layer_count, examples_per_layer, 2), dtype=np.float32)
+    labels, pair_ids = [], []
+    for row_index, row in enumerate(rows):
+        layer = int(row["layer"]) - 1
+        example = row_index % examples_per_layer
+        coordinates[layer, example] = [float(row["pc1"]), float(row["pc2"])]
+        if layer == 0:
+            labels.append(row["language"])
+            pair_ids.append(int(row["pair_id"]))
+    config = yaml.safe_load(CONFIG_LOCAL.read_text())
+    render_plot(
+        coordinates,
+        labels,
+        pair_ids,
+        explained,
+        results_dir / "layerwise_pca.png",
+        config["plot"],
+    )
+    print(f"Re-rendered: {results_dir / 'layerwise_pca.png'}")
 
 
 def render_dashboard(history: list[dict[str, Any]]) -> str:
@@ -250,6 +295,7 @@ def self_test(output: Path) -> None:
 
     rng = np.random.default_rng(42)
     labels = ["English"] * 20 + ["French"] * 20
+    pair_ids = list(range(20)) + list(range(20))
     activations = rng.normal(size=(4, 40, 12)).astype(np.float32)
     coordinates, explained = [], []
     for layer in activations:
@@ -264,10 +310,13 @@ def self_test(output: Path) -> None:
         "alpha": 0.7,
         "edge_color": "black",
         "edge_linewidth": 0.3,
+        "pair_line_color": "#B0B0B0",
+        "pair_line_alpha": 0.45,
+        "pair_line_width": 0.35,
         "marker_size": 10,
         "dpi": 100,
     }
-    render_plot(np.asarray(coordinates), labels, explained, output, output.with_suffix(".pdf"), config)
+    render_plot(np.asarray(coordinates), labels, pair_ids, explained, output, config)
     if not output.exists() or output.stat().st_size == 0:
         raise RuntimeError("self-test plot was not created")
     print(f"Self-test plot: {output}")
@@ -391,7 +440,7 @@ def run_remote(run_mode: str = "fresh") -> dict[str, Any]:
                     writer.writerow([layer_index + 1, pair_ids[example_index], labels[example_index], float(point[0]), float(point[1])])
 
         explained = [row["two_dimensional"] for row in explained_rows]
-        render_plot(coordinates_array, labels, explained, run_dir / "layerwise_pca.png", run_dir / "layerwise_pca.pdf", config["plot"])
+        render_plot(coordinates_array, labels, pair_ids, explained, run_dir / "layerwise_pca.png", config["plot"])
         results = {
             "status": "complete",
             "pairs": len(pairs),
@@ -408,7 +457,7 @@ def run_remote(run_mode: str = "fresh") -> dict[str, Any]:
             f"- Pairs: {len(pairs)}\n- Examples: {len(labels)}\n"
             f"- Layers: {layer_major.shape[0]}\n- Hidden size: {layer_major.shape[2]}\n",
         )
-        required = ["layerwise_pca.png", "layerwise_pca.pdf", "pca_coordinates.csv", "explained_variance.json", "activations.npz"]
+        required = ["layerwise_pca.png", "pca_coordinates.csv", "explained_variance.json", "activations.npz"]
         if any(not (run_dir / name).exists() or (run_dir / name).stat().st_size == 0 for name in required):
             raise RuntimeError("one or more final artifacts are missing or empty")
         persist(run_dir, config, phase="complete", completed=len(pairs), total=len(pairs), status="complete", started=started)
@@ -430,7 +479,10 @@ def main(run_mode: str = "fresh") -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--rerender-results", type=Path)
     parser.add_argument("--output", type=Path, default=Path("/tmp/language_layerwise_pca_self_test.png"))
     args = parser.parse_args()
     if args.self_test:
         self_test(args.output)
+    elif args.rerender_results:
+        rerender_existing(args.rerender_results)
