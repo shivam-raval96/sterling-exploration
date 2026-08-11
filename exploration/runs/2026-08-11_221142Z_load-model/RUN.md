@@ -61,3 +61,7 @@
   verified in a browser, including provider names, descriptions, groups,
   activation/logit values, and flags when present. Artifacts are in
   `results/05-bilingual-token-concept-viewer/`.
+- Re-rendered experiment 05's viewer locally as a one-pair-at-a-time interface
+  with previous/next and direct pair navigation. Token hover, focus, or click
+  persistently highlights the most recent token and fills a scrollable concept
+  panel below the bilingual text until another token is selected.
