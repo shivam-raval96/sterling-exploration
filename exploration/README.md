@@ -7,7 +7,10 @@ Install the optional dependencies:
 
 ```bash
 python -m pip install -e '.[model-inspection]'
+python -m pip install 'steerling @ git+https://github.com/guidelabs/steerling.git@f34ffa89e46969445f3cf6e7c885e9623a2047c1'
 ```
+
+The official Steerling package currently requires Python 3.13.
 
 The default mode downloads only configuration and remote model source files:
 
