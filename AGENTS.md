@@ -89,3 +89,10 @@ environment. Transfer only verified code into the notebook. If hardware or
 credentials prevent a complete run, execute the largest meaningful portion and
 state exactly what remains unverified instead of presenting the notebook as
 tested.
+
+Exploration work is organized under `exploration/runs/`, with one directory per
+explicitly started run named `YYYY-MM-DD_HHMMSSZ_name`. A run may contain a
+collection of related investigations, so do not create a new run directory for
+each task or experiment. Create a new run directory only when the user explicitly
+says to start a new run. Each run directory contains `scripts/`, `results/`, and
+a Markdown run summary.
