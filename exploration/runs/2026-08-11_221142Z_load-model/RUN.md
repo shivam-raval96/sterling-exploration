@@ -17,4 +17,5 @@
   model, prints the full module representation, enumerates every module plus its
   direct parameter/buffer shapes and types, records vocabulary/tokenizer/config
   metadata, and writes `results/model_inspection.json` atomically.
+- Prepared `EXPERIMENT_CARD.md` for execution in a Modal Notebook on one L40S.
 - No model compute has been launched and no results have been produced yet.
