@@ -10,7 +10,11 @@ python -m pip install -e '.[model-inspection]'
 python -m pip install 'steerling @ git+https://github.com/guidelabs/steerling.git@f34ffa89e46969445f3cf6e7c885e9623a2047c1'
 ```
 
-The official Steerling package currently requires Python 3.13.
+The official Steerling package metadata currently requires Python 3.13. The
+prompt notebook supports an existing Python 3.11/3.12 GPU kernel by installing
+the pinned source with `--ignore-requires-python`; this bypasses only the package
+metadata check and may need revisiting if the source begins using 3.13-only
+syntax.
 
 The default mode downloads only configuration and remote model source files:
 
