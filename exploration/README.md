@@ -16,6 +16,11 @@ the pinned source with `--ignore-requires-python`; this bypasses only the packag
 metadata check and may need revisiting if the source begins using 3.13-only
 syntax.
 
+Steerling also declares Triton unconditionally, although its model and generation
+code do not import Triton. `install_steerling_notebook.py` preserves the
+notebook platform's existing CUDA-enabled PyTorch build, installs portable
+dependencies, and installs pinned Steerling with `--no-deps`.
+
 The default mode downloads only configuration and remote model source files:
 
 ```bash
