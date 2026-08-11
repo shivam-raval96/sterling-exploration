@@ -10,16 +10,16 @@ python -m pip install -e '.[model-inspection]'
 python -m pip install 'steerling @ git+https://github.com/guidelabs/steerling.git@f34ffa89e46969445f3cf6e7c885e9623a2047c1'
 ```
 
-The official Steerling package metadata currently requires Python 3.13. The
-prompt notebook supports an existing Python 3.11/3.12 GPU kernel by installing
-the pinned source with `--ignore-requires-python`; this bypasses only the package
-metadata check and may need revisiting if the source begins using 3.13-only
-syntax.
+Create and register the dedicated notebook environment, then verify it:
 
-Steerling also declares Triton unconditionally, although its model and generation
-code do not import Triton. `install_steerling_notebook.py` preserves the
-notebook platform's existing CUDA-enabled PyTorch build, installs portable
-dependencies, and installs pinned Steerling with `--no-deps`.
+```bash
+python3 exploration/setup_steerling_env.py
+python3 exploration/verify_steerling_env.py
+```
+
+This creates `.venv-steerling` and registers the `sterling-exploration` kernel.
+The prompt notebook metadata selects that kernel. If Jupyter already had the
+notebook open, select **Python (sterling-exploration)** and restart the kernel.
 
 The default mode downloads only configuration and remote model source files:
 
