@@ -82,3 +82,10 @@ active. Pull completed or stopped run folders into `runs/`.
 Run `python -m pytest` for CPU tests and `python -m compileall modal_app.py src`
 before committing. Do not commit caches, model weights, secrets, or transient
 Modal state. Keep commits small and conventional.
+
+Before creating or changing executable logic in an `.ipynb` notebook, first put
+the same logic in a Python script and run that script successfully in the target
+environment. Transfer only verified code into the notebook. If hardware or
+credentials prevent a complete run, execute the largest meaningful portion and
+state exactly what remains unverified instead of presenting the notebook as
+tested.
