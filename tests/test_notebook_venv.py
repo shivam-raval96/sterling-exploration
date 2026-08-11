@@ -13,7 +13,7 @@ def test_environment_report_matches_current_prefix() -> None:
 def test_configure_environment_matches_kernel(monkeypatch) -> None:
     monkeypatch.setenv("PATH", "/usr/bin")
     prefix = configure_environment()
-    assert Path(__import__("os").environ["VIRTUAL_ENV"]) == prefix
     assert __import__("os").environ["PATH"].split(__import__("os").pathsep)[0] == str(
-        prefix / "bin"
+        Path(__import__("sys").executable).resolve().parent
     )
+    assert Path(__import__("os").environ["VIRTUAL_ENV"]) == prefix
