@@ -13,5 +13,8 @@
 
 ## Run log
 
-The run folder has been initialized. No model compute has been launched and no
-results have been produced yet.
+- Added `scripts/inspect_model.py`. It directly loads the pinned Hugging Face
+  model, prints the full module representation, enumerates every module plus its
+  direct parameter/buffer shapes and types, records vocabulary/tokenizer/config
+  metadata, and writes `results/model_inspection.json` atomically.
+- No model compute has been launched and no results have been produced yet.
