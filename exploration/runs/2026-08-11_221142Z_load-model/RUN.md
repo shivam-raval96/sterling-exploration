@@ -65,3 +65,13 @@
   with previous/next and direct pair navigation. Token hover, focus, or click
   persistently highlights the most recent token and fills a scrollable concept
   panel below the bilingual text until another token is selected.
+- Prepared `EXPERIMENT_CARD_06.md` and its resolved config for a fresh
+  threshold-based extraction that retains every known and unknown concept above
+  5% activation. The first approved submission stopped at 0/24 before model
+  loading because its pinned revision was not a loadable Steerling snapshot.
+  The card now pins experiment 05's verified model revision and a new immutable
+  output directory. The revised run completed as Modal app
+  `ap-E1HbOqn2621p4qPh6AZZwW`, call
+  `fc-01KZSN2Q8EZWC3W8JFN8FHDW8J`, in 65.666 seconds. It retained 208,414
+  activations above 5% across 1,318 tokens with zero threshold violations and
+  produced a normalized, per-pair lazy-loading viewer.

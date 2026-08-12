@@ -18,17 +18,23 @@ import yaml
 APP_NAME = "sterling-bilingual-token-concepts"
 RUN_ROOT = Path("exploration/runs/2026-08-11_221142Z_load-model")
 CONFIG_LOCAL = RUN_ROOT / "config_token_concept_viewer.yaml"
+THRESHOLD_CONFIG_LOCAL = RUN_ROOT / "config_token_concepts_above_5pct.yaml"
 PAIRS_LOCAL = (
     RUN_ROOT
     / "results/04-english-french-layerwise-pca/04-english-french-layerwise-pca/selected_pairs.jsonl"
 )
 CATALOG_LOCAL = Path(".cache/concepts/concept_labels.parquet")
 CONFIG_REMOTE = Path("/root/config_token_concept_viewer.yaml")
+THRESHOLD_CONFIG_REMOTE = Path("/root/config_token_concepts_above_5pct.yaml")
 PAIRS_REMOTE = Path("/root/selected_pairs.jsonl")
 CATALOG_REMOTE = Path("/root/concept_labels.parquet")
 REMOTE_RUN_DIR = Path(
     "/mnt/run-output/exploration/runs/2026-08-11_221142Z_load-model/"
     "05-bilingual-token-concept-viewer"
+)
+THRESHOLD_REMOTE_RUN_DIR = Path(
+    "/mnt/run-output/exploration/runs/2026-08-11_221142Z_load-model/"
+    "06-token-concepts-above-5pct-v2"
 )
 
 app = modal.App(APP_NAME)
@@ -42,6 +48,7 @@ image = (
         "pyyaml==6.0.2",
     )
     .add_local_file(str(CONFIG_LOCAL), str(CONFIG_REMOTE), copy=True)
+    .add_local_file(str(THRESHOLD_CONFIG_LOCAL), str(THRESHOLD_CONFIG_REMOTE), copy=True)
     .add_local_file(str(PAIRS_LOCAL), str(PAIRS_REMOTE), copy=True)
     .add_local_file(str(CATALOG_LOCAL), str(CATALOG_REMOTE), copy=True)
 )
@@ -257,12 +264,18 @@ def enrich_concepts(
     ids: Any,
     logits: Any,
     catalog: dict[tuple[str, int], dict[str, Any]],
+    activation_threshold: float | None = None,
 ) -> list[dict[str, Any]]:
     import torch
 
     enriched = []
     for concept_id, logit in zip(ids, logits, strict=True):
         cid, score = int(concept_id), float(logit)
+        activation = float(torch.sigmoid(torch.tensor(score)))
+        if activation_threshold is not None:
+            threshold_logit = math.log(activation_threshold / (1.0 - activation_threshold))
+            if score <= threshold_logit:
+                continue
         metadata = catalog.get((head, cid))
         if metadata is None:
             metadata = {
@@ -279,7 +292,7 @@ def enrich_concepts(
                 "head": head,
                 "concept_id": cid,
                 "logit": score,
-                "activation": float(torch.sigmoid(torch.tensor(score))),
+                "activation": activation,
                 **metadata,
             }
         )
@@ -294,6 +307,7 @@ def analyze_language(
     catalog: dict[tuple[str, int], dict[str, Any]],
     known_top_k: int,
     unknown_top_k: int,
+    activation_threshold: float | None = None,
 ) -> dict[str, Any]:
     import torch
 
@@ -313,12 +327,14 @@ def analyze_language(
                     decomposition.known_topk_indices[0, position, :known_top_k],
                     decomposition.known_topk_logits[0, position, :known_top_k],
                     catalog,
+                    activation_threshold,
                 ),
                 "unknown_concepts": enrich_concepts(
                     "unknown",
                     decomposition.unknown_topk_indices[0, position, :unknown_top_k],
                     decomposition.unknown_topk_logits[0, position, :unknown_top_k],
                     catalog,
+                    activation_threshold,
                 ),
             }
         )
@@ -355,15 +371,18 @@ def self_test(output: Path) -> None:
     volumes={"/mnt/model-cache": model_cache, "/mnt/run-output": outputs},
     secrets=[hf_secret],
 )
-def run_remote(run_mode: str = "fresh") -> dict[str, Any]:
+def run_remote(run_mode: str = "fresh", experiment: str = "topk") -> dict[str, Any]:
     import torch
     from transformers import AutoModel, AutoTokenizer
 
     started = time.monotonic()
-    config = yaml.safe_load(CONFIG_REMOTE.read_text())
+    if experiment not in {"topk", "threshold"}:
+        raise ValueError("experiment must be topk or threshold")
+    config_path = THRESHOLD_CONFIG_REMOTE if experiment == "threshold" else CONFIG_REMOTE
+    config = yaml.safe_load(config_path.read_text())
     config["run_mode"] = run_mode
     config["fingerprint"] = fingerprint(config)
-    run_dir = REMOTE_RUN_DIR
+    run_dir = THRESHOLD_REMOTE_RUN_DIR if experiment == "threshold" else REMOTE_RUN_DIR
     checkpoint_path = run_dir / "checkpoint.json"
     if checkpoint_path.exists():
         checkpoint = json.loads(checkpoint_path.read_text())
@@ -414,14 +433,22 @@ def run_remote(run_mode: str = "fresh") -> dict[str, Any]:
         chunks_dir.mkdir(exist_ok=True)
         completed = sum(1 for path in chunks_dir.glob("chunk_*.jsonl") for line in path.read_text().splitlines() if line)
         step = config["processing"]["checkpoint_pairs"]
+        if experiment == "threshold":
+            known_top_k = config["concepts"]["native_known_top_k"]
+            unknown_top_k = config["concepts"]["native_unknown_top_k"]
+            activation_threshold = config["concepts"]["activation_threshold"]
+        else:
+            known_top_k = config["concepts"]["known_top_k"]
+            unknown_top_k = config["concepts"]["unknown_top_k"]
+            activation_threshold = None
         for start in range(completed, total, step):
             records = []
             for pair in pairs[start : start + step]:
                 records.append(
                     {
                         "pair_id": pair["pair_id"],
-                        "english": analyze_language(model, tokenizer, pair, "english", catalog, config["concepts"]["known_top_k"], config["concepts"]["unknown_top_k"]),
-                        "french": analyze_language(model, tokenizer, pair, "french", catalog, config["concepts"]["known_top_k"], config["concepts"]["unknown_top_k"]),
+                        "english": analyze_language(model, tokenizer, pair, "english", catalog, known_top_k, unknown_top_k, activation_threshold),
+                        "french": analyze_language(model, tokenizer, pair, "french", catalog, known_top_k, unknown_top_k, activation_threshold),
                     }
                 )
             atomic_text(chunks_dir / f"chunk_{start:04d}_{start + len(records):04d}.jsonl", "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in records))
@@ -432,9 +459,11 @@ def run_remote(run_mode: str = "fresh") -> dict[str, Any]:
         atomic_text(run_dir / "token_concepts.jsonl", "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in all_records))
         atomic_text(run_dir / "token_concepts.html", viewer_html(all_records))
         token_count = sum(len(record[language]["tokens"]) for record in all_records for language in ("english", "french"))
-        results = {"status": "complete", "pairs": len(all_records), "conversations": len(all_records) * 2, "user_tokens": token_count, "known_top_k": config["concepts"]["known_top_k"], "unknown_top_k": config["concepts"]["unknown_top_k"], "catalog_sha256": config["catalog"]["sha256"], "fingerprint": config["fingerprint"]}
+        known_count = sum(len(token["known_concepts"]) for record in all_records for language in ("english", "french") for token in record[language]["tokens"])
+        unknown_count = sum(len(token["unknown_concepts"]) for record in all_records for language in ("english", "french") for token in record[language]["tokens"])
+        results = {"status": "complete", "pairs": len(all_records), "conversations": len(all_records) * 2, "user_tokens": token_count, "known_concepts_saved": known_count, "unknown_concepts_saved": unknown_count, "activation_threshold": activation_threshold, "catalog_sha256": config["catalog"]["sha256"], "fingerprint": config["fingerprint"]}
         atomic_json(run_dir / "results.json", results)
-        atomic_text(run_dir / "RESULTS.md", f"# Bilingual token concept viewer\n\n- Pairs: {len(all_records)}\n- Conversations: {len(all_records) * 2}\n- User-content tokens: {token_count}\n")
+        atomic_text(run_dir / "RESULTS.md", f"# Bilingual token concept viewer\n\n- Pairs: {len(all_records)}\n- Conversations: {len(all_records) * 2}\n- User-content tokens: {token_count}\n- Known concepts saved: {known_count}\n- Unknown concepts saved: {unknown_count}\n- Activation threshold: {activation_threshold}\n")
         if (run_dir / "token_concepts.html").stat().st_size < 1000:
             raise RuntimeError("viewer HTML is missing or unexpectedly small")
         persist(run_dir, config, phase="complete", completed=total, total=total, status="complete", started=started)
@@ -446,11 +475,11 @@ def run_remote(run_mode: str = "fresh") -> dict[str, Any]:
 
 
 @app.local_entrypoint()
-def main(run_mode: str = "fresh") -> None:
+def main(run_mode: str = "fresh", experiment: str = "topk") -> None:
     if run_mode not in {"fresh", "resume"}:
         raise ValueError("run_mode must be fresh or resume")
-    call = run_remote.spawn(run_mode)
-    print(json.dumps({"app": APP_NAME, "call_id": call.object_id, "run_mode": run_mode}))
+    call = run_remote.spawn(run_mode, experiment)
+    print(json.dumps({"app": APP_NAME, "call_id": call.object_id, "run_mode": run_mode, "experiment": experiment}))
 
 
 if __name__ == "__main__":

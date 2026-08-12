@@ -28,3 +28,5 @@ experiments/*/runs/*
 # Large, reproducible exploration tensors stay local and on the Modal Volume.
 exploration/runs/*/results/*/*/activations.npz
 exploration/runs/*/results/*/*/activation_chunks/
+exploration/runs/*/results/06-token-concepts-above-5pct-v2/*/token_concepts.jsonl
+exploration/runs/*/results/06-token-concepts-above-5pct-v2/*/token_concepts_chunks/

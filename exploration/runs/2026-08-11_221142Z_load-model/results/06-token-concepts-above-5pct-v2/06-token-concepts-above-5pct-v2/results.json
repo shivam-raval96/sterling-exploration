@@ -1,0 +1,11 @@
+{
+  "activation_threshold": 0.05,
+  "catalog_sha256": "09c3cec4ca9301f76afc848f8ad83645c4ad365937dd6c4d66fa0f5e8e749139",
+  "conversations": 48,
+  "fingerprint": "bf97e5b7fa280178dbe6ca5c01759a5bfbe47a9491aabe71715ec1b78976baca",
+  "known_concepts_saved": 39710,
+  "pairs": 24,
+  "status": "complete",
+  "unknown_concepts_saved": 168704,
+  "user_tokens": 1318
+}

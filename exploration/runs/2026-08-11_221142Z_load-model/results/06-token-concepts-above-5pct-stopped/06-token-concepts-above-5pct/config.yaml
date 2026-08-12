@@ -1,0 +1,45 @@
+catalog:
+  path: .cache/concepts/concept_labels.parquet
+  rows: 134928
+  sha256: 09c3cec4ca9301f76afc848f8ad83645c4ad365937dd6c4d66fa0f5e8e749139
+concepts:
+  activation_threshold: 0.05
+  comparison: strict_greater_than
+  known_count: 33732
+  logit_threshold: -2.944438979
+  native_known_top_k: 32
+  native_unknown_top_k: 128
+  truncate_top_k: false
+  unknown_count: 101196
+experiment:
+  id: 06-token-concepts-above-5pct
+  run_id: 2026-08-11_221142Z_load-model
+  run_mode: fresh
+fingerprint: 730fcf6354384499710a0d40cd2c8cc95097bf2bec02093c674ec89cd946fb3a
+modal:
+  gpu: L40S
+  model_cache_volume: sterling-hf-cache
+  output_directory: exploration/runs/2026-08-11_221142Z_load-model/06-token-concepts-above-5pct
+  output_volume: sterling-exploration-runs
+  retries: 0
+  timeout_seconds: 1800
+model:
+  dtype: bfloat16
+  id: guidelabs/steerling-8b-instruct
+  revision: 5612e7eb7c57858f3bf2c0983ca06e583180f51f
+processing:
+  checkpoint_pairs: 2
+  compress_pair_json: true
+  conversation_batch_size: 1
+  score_dtype: float32
+run_mode: fresh
+source:
+  conversations: 48
+  pair_count: 24
+  selected_pairs: results/04-english-french-layerwise-pca/04-english-french-layerwise-pca/selected_pairs.jsonl
+viewer:
+  activation_bars: true
+  concept_panel_scrollable: true
+  lazy_load_pairs: true
+  pairs_visible: 1
+  persistent_token_selection: true
